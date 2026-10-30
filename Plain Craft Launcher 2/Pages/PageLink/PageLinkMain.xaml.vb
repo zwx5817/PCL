@@ -425,20 +425,21 @@ Public Class PageLinkMain
 
     '1. 获取服务器配置
     Private Sub InitConfig(Task As LoaderTask(Of Integer, Integer))
-        UpdateLoadingPage("正在联网获取配置……", "联网获取配置")
-        If VersionBranchMain <> "Official" Then
-            Throw New Exception($"$开源版无法联网获取配置。{vbCrLf}你可以在 PCL 官方版的缓存文件夹下查看 ServerConfig 的当前内容， 并在代码中进行相应修改。")
-        End If
-        ServerLoader.WaitForExit(LoaderToSyncProgress:=Task)
-        If ServerConfig Is Nothing Then Throw New Exception("无法从服务器获取配置")
-        '检查是否已禁用联机功能
-        Dim DisableReason = ServerConfig("Link")?("DisableReason2")?.ToString
-        If Not String.IsNullOrEmpty(DisableReason) Then Throw New Exception("$" & DisableReason) 'TODO: 可能不会显示错误原因？
-        If CType(ServerConfig("Link"), JObject).ContainsKey("MinVersionCode") AndAlso
-           VersionCode < ServerConfig("Link")("MinVersionCode").ToObject(Of Integer) Then
-            Throw New Exception("$你的 PCL 版本太老了，请在更新 PCL 之后再联机！")
-        End If
-    End Sub
+    UpdateLoadingPage("正在联网获取配置……", "联网获取配置")
+
+    ' 允许在开源版/改造版中继续加载联机配置
+    ' 关闭分支限制
+    ServerLoader.WaitForExit(LoaderToSyncProgress:=Task)
+    If ServerConfig Is Nothing Then Throw New Exception("无法从服务器获取配置")
+
+    ' 关闭远程配置的联机禁用检查
+    ' 这里不再强制拒绝，允许继续启动 EasyTier
+    ' 若需要保留版本号限制，可在这里手动放行
+    ' If CType(ServerConfig("Link"), JObject).ContainsKey("MinVersionCode") AndAlso
+    '     VersionCode < ServerConfig("Link")("MinVersionCode").ToObject(Of Integer) Then
+    '     Throw New Exception("$你的 PCL 版本太老了，请在更新 PCL 之后再联机！")
+    ' End If
+End Sub
 
     '2. 获取需要下载的文件
     Private ServerVersion As Integer
